@@ -8,6 +8,7 @@ pkgs.mkShell {
   buildInputs = with pkgs; [
     python311Packages.virtualenv
     poetry
+    sqlite
   ];
   src = null;
   shellHook = ''
