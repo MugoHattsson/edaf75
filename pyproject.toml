@@ -16,6 +16,8 @@ click = "^8.1.7"
 toml = "^0.10.2"
 jupyterlab = "^4.0.10"
 pandas = "^2.1.4"
+bottle = "^0.12.25"
+requests = "^2.31.0"
 
 
 [build-system]
