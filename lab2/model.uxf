@@ -17,9 +17,7 @@ _user_name_
 full_name
 password</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>360</x><y>290</y><w>100</w><h>50</h></coordinates><panel_attributes>*Ticket*
 --
-_ticket_id_</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>150</x><y>160</y><w>230</w><h>40</h></coordinates><panel_attributes>lt=-
-m1=*
-m2=*</panel_attributes><additional_attributes>10;10;210;10</additional_attributes></element><element><id>Relation</id><coordinates><x>100</x><y>190</y><w>40</w><h>120</h></coordinates><panel_attributes>lt=-
+_ticket_id_</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>100</x><y>190</y><w>40</w><h>120</h></coordinates><panel_attributes>lt=-
 m1=1
 m2=*</panel_attributes><additional_attributes>10;10;10;100</additional_attributes></element><element><id>Relation</id><coordinates><x>100</x><y>370</y><w>40</w><h>100</h></coordinates><panel_attributes>lt=-
 m1=*

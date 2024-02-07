@@ -16,7 +16,6 @@ We'd like to use an invented key for the performance relation so that a ticket s
 
 theaters(_theater_name_, capacity)
 customers(_user_name_, full_name, password)
-memberships(/_theater_name_/, /_user_name_/)
 movies(_imdb_, title, year, run_time)
 performances(_performance_id_, start_time, date, /theater_name/, /imdb/)
 tickets(_ticket_id_, /user_name/, /performance_id/)
