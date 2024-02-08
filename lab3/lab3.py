@@ -1,6 +1,7 @@
 import sqlite3
 import hashlib
 
+from urllib.parse import unquote
 from bottle import get, post, request, response, run
 
 PORT = 7007
@@ -173,21 +174,35 @@ def post_performance():
 def get_movies():
     c = db.cursor()
     try:
-        c.execute( """
+        query = """
             SELECT  *
             FROM    movies
+            WHERE   TRUE
             """
-        )
+
+        params = []
+
+        if request.query.title:
+            query += "AND title = ?"
+            params.append(unquote(request.query.title))
+
+        if request.query.year:
+            query += "AND year = ?"
+            params.append(request.query.year)
+
+        c.execute(query, params)
+        
         found = [{'imdbKey': imdb,
                  'title': title,
                  'year': year} for imdb, title, year in c]
 
         if not found:
             response.status = 400
-            return "No such movies"
         else:
             response.status = 200
-            return {'data': found}
+
+        return {'data': found}
+
     except sqlite3.IntegrityError:
         response.status = 400
         return ""
@@ -331,5 +346,44 @@ def post_ticket():
         response.status = 201
         return ""
 
+@get('/users/<user_name>/tickets')
+def get_user_tickets(user_name):
+    c = db.cursor()
+    c.execute(
+        """
+        WITH user_tickets(performance_id, count) as (
+            SELECT   performance_id, count() as count
+            FROM     tickets
+            WHERE    user_name = ?
+            GROUP BY performance_id
+        )
+        SELECT  date, 
+                start_time, 
+                theater_name, 
+                title, 
+                year, 
+                count as nbrOfTickets
+
+        FROM    user_tickets
+                join performances using(performance_id)
+                join movies using(imdb)
+        """,
+        [user_name]
+    )
+
+    found = [{'date': date,
+          'startTime': start_time,
+          'theater': theater_name,
+          'title': title,
+          'year': year,
+          'nbrOfTickets': nbrOfTickets} for date, start_time, theater_name, title, year, nbrOfTickets in c]
+
+    if not found:
+        response.status = 400
+        return "User has no tickets"
+
+    response.status = 200
+
+    return {'data': found}
 
 run(host='localhost', port=PORT)
