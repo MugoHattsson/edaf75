@@ -53,6 +53,26 @@ CREATE TABLE tickets (
     FOREIGN KEY     (performance_id) REFERENCES performances(performance_id)
 );
 
+DROP TRIGGER IF EXISTS ticket_limit;
+CREATE TRIGGER ticket_limit
+    BEFORE INSERT ON tickets
+    WHEN
+        (WITH taken_seats(performance_id, taken) as (
+            SELECT      performance_id, count() as taken
+            FROM        performances
+                        JOIN tickets using(performance_id)
+            GROUP BY    performance_id
+        )
+        SELECT  capacity - coalesce(taken, 0) as remaining_seats
+        FROM    performances
+                join theaters using(theater_name)
+                join movies using(imdb)
+                left outer join taken_seats using(performance_id)
+        WHERE   performance_id = NEW.performance_id) <= 0
+    BEGIN
+        SELECT RAISE (ROLLBACK, "No tickets left");
+    END;
+
 -- Insert data into the tables.
 INSERT
 INTO    theaters(theater_name, capacity)

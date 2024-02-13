@@ -84,6 +84,29 @@ def reset():
             );
             """
         )
+        c.execute("DROP TRIGGER IF EXISTS ticket_limit;")
+        c.execute(
+            """
+            CREATE TRIGGER ticket_limit
+                BEFORE INSERT ON tickets
+                WHEN
+                    (WITH taken_seats(performance_id, taken) as (
+                        SELECT      performance_id, count() as taken
+                        FROM        performances
+                                    JOIN tickets using(performance_id)
+                        GROUP BY    performance_id
+                    )
+                    SELECT  capacity - coalesce(taken, 0) as remaining_seats
+                    FROM    performances
+                            join theaters using(theater_name)
+                            join movies using(imdb)
+                            left outer join taken_seats using(performance_id)
+                    WHERE   performance_id = NEW.performance_id) <= 0
+                BEGIN
+                    SELECT RAISE (ROLLBACK, "No tickets left");
+                END;
+             """
+        )
         c.execute(
             """
             INSERT
@@ -93,11 +116,14 @@ def reset():
                     ('Skandia', 100);
             """
         )
-        db.commit()
 
     except sqlite3.IntegrityError:
         response.status = 409
         return "Something went wrong"
+    else:
+        db.commit()
+        response.status = 200
+        return "Database successfully reset"
 
 @post('/users')
 def post_user():
@@ -240,7 +266,6 @@ def get_performances():
             WITH taken_seats(performance_id, taken) as (
                 SELECT performance_id, count() as taken
                 FROM performances
-                        JOIN theaters using(theater_name)
                         JOIN tickets using(performance_id)
                 GROUP BY performance_id
             )
@@ -283,29 +308,6 @@ def post_ticket():
     try:
         c.execute(
             """
-            WITH taken_seats(performance_id, taken) as (
-                SELECT  performance_id, count() as taken
-                FROM    performances
-                        JOIN theaters using(theater_name)
-                        JOIN tickets using(performance_id)
-                GROUP BY performance_id
-            )
-            SELECT capacity - coalesce(taken, 0) as remaining_seats
-            FROM    performances
-                    JOIN theaters using(theater_name)
-                    LEFT OUTER JOIN taken_seats using(performance_id)
-            WHERE   performance_id = ?
-            """,
-            [ticket['performanceId']]
-        )
-        remaining, = c.fetchone()
-
-        if remaining <= 0:
-            response.status = 400
-            return "No tickets left"
-
-        c.execute(
-            """
             SELECT  *
             FROM    customers
             WHERE   user_name = ? and password = ?
@@ -333,18 +335,15 @@ def post_ticket():
             response.status = 400
             return "Error"
 
+    except sqlite3.IntegrityError as e:
+        response.status = 400
+        return str(e)
+
+    else:
+        db.commit()
         ticket_id, = found
         response.status = 201
         return f"/tickets/{ticket_id}"
-
-
-    except sqlite3.IntegrityError:
-        response.status = 400
-        return "Error"
-    else:
-        db.commit()
-        response.status = 201
-        return ""
 
 @get('/users/<user_name>/tickets')
 def get_user_tickets(user_name):
