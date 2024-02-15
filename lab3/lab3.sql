@@ -29,7 +29,6 @@ CREATE TABLE movies (
     imdb            TEXT,
     title           TEXT,
     year            INT,
-    run_time        INT,
     PRIMARY KEY     (imdb)
 );
 
@@ -66,7 +65,6 @@ CREATE TRIGGER ticket_limit
         SELECT  capacity - coalesce(taken, 0) as remaining_seats
         FROM    performances
                 join theaters using(theater_name)
-                join movies using(imdb)
                 left outer join taken_seats using(performance_id)
         WHERE   performance_id = NEW.performance_id) <= 0
     BEGIN
